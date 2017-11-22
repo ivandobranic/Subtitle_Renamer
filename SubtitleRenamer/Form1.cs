@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -17,14 +17,14 @@ namespace SubtitleRenamer
     // Program pronalazi video i subtitle extenzije, izdvaja naziv i sprema ih u array-e. U tim array-ima
     // uklanja najcesce separatore i razmak, i sprema u nove arraye. Ukoliko je u naslovu godina filma
     // (sto je i cest slucaj) uklanja sve u nazivu nakon godine i ostavlja sam naslov filma za usporedbu.
-    // U slucaju da nema godine u nazivu onda pravi array resize na osnovu drugih cestih naziva u naslovu.
-    // Ukoliko subtitle file sadrzi nazive iz resiz-anog video array-a, video file se rename-a sa subtitleov-im.
+    // Ukoliko subtitle file sadrzi nazive iz video array-a, video file se rename-a sa subtitleov-im.
     /// </summary>
     public partial class Form1 : Form
     {
         public Form1()
         {
             InitializeComponent();
+            button2.Enabled = false;
             button3.Enabled = false;
 
         }
@@ -34,10 +34,15 @@ namespace SubtitleRenamer
         string[] subtitlePathss;
         string selectedVideos;
         string selectedSubtitles;
-        string regularExpression = "[0-9]{1,4}";
+        string regularExpression = "\\d\\d\\d\\d";
         Match Year;
         string resolution = "1080|720|2140|blue-ray|rip|cam|ts|web";
         Match videoResolution;
+        string TvShowExpression = "\\w\\d\\d\\w\\d\\d";
+        Match TvShow;
+        string TvShowValue;
+        int TvShowIndex;
+        int realTvShowIndex;
         int searchYearIndex;
         int searchResolutionIndex;
         string resolutionValue;
@@ -48,9 +53,10 @@ namespace SubtitleRenamer
         int succesfullyRenamed = 0;
         int count = 0;
 
+
         private void button1_Click(object sender, EventArgs e)
         {
-            button3.Enabled = true;
+            button2.Enabled = true;
             if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
             {
                 selectedVideos = folderBrowserDialog1.SelectedPath;
@@ -69,6 +75,7 @@ namespace SubtitleRenamer
 
         private void button2_Click(object sender, EventArgs e)
         {
+
             button3.Enabled = true;
             if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
             {
@@ -79,7 +86,7 @@ namespace SubtitleRenamer
                    .Select(Path.GetFileNameWithoutExtension);
 
                 subtitlePathss = subtitlePaths.ToArray();
-
+              
             }
 
 
@@ -99,37 +106,63 @@ namespace SubtitleRenamer
                     {
                         foreach (string video in videoPathss)
                         {
-                            count = 0;
+
+                           
+
+                            Year = Regex.Match(video, regularExpression);
+                            searchValue = Year.Value;
+                            searchYearIndex = video.IndexOf(searchValue);
+
+                            videoResolution = Regex.Match(video, resolution, RegexOptions.IgnoreCase);
+                            resolutionValue = videoResolution.Value;
+                            searchResolutionIndex = video.IndexOf(resolutionValue);
+
+                            TvShow = Regex.Match(video, TvShowExpression, RegexOptions.IgnoreCase);
+                            TvShowValue = TvShow.Value;
+                            TvShowIndex = video.IndexOf(TvShowValue);
+                            realTvShowIndex = TvShowIndex + TvShowValue.Length;
+                            
+                         
+                            if (searchYearIndex != 0 && video.Contains(searchValue))
+                            {
+
+                                 video.Remove(searchYearIndex);
+
+                            }
+
+                            else if (searchResolutionIndex != 0 && video.Contains(resolutionValue))
+
+                            {
+                                video.Remove(searchResolutionIndex);
+                            }
+
+                        
+
+                            else if (TvShowIndex != 0 && video.Contains(TvShowValue))
+                            {
+
+                                video.Remove(realTvShowIndex);
+
+                            }
+
+
+
+
+
+
                             videoFiles = GetFileNameToRename(video).Split(new Char[] { '.', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
                             foreach (string subtitle in subtitlePathss)
                             {
+                                count = 0;
+                               
+                               
 
 
                                 foreach (string videos in videoFiles)
                                 {
 
 
-                                    Year = Regex.Match(video, regularExpression);
-                                    searchValue = Year.Value;
-                                    searchYearIndex = Array.IndexOf(videoFiles, searchValue);
-
-                                    videoResolution = Regex.Match(video, resolution, RegexOptions.IgnoreCase);
-                                    resolutionValue = videoResolution.Value;
-                                    searchResolutionIndex = Array.IndexOf(videoFiles, resolutionValue);
-
-                                    if (searchYearIndex != -1 && videos.Contains(searchValue))
-                                    {
-                                        Array.Resize(ref videoFiles, searchYearIndex);
-                                        break;
-                                    }
-
-                                    else if (searchResolutionIndex != -1 && videos.Contains(resolutionValue))
-
-                                    {
-                                        Array.Resize(ref videoFiles, searchResolutionIndex);
-                                        break;
-                                    }
 
                                     if (subtitle.IndexOf(videos, StringComparison.OrdinalIgnoreCase) >= 0)
 
@@ -144,33 +177,29 @@ namespace SubtitleRenamer
                                     }
 
                                 }
-
-                            }
-
-
-
-                            if (videoFiles.Length == count)
-                            {
-
-                                fullPath = ReplaceMethod(video, GetFileNameToRename(video), subtitleName);
-
-                                try
+                                if (videoFiles.Length != 0 && videoFiles.Length == count)
                                 {
-                                    File.Move(video, fullPath);
-                                    succesfullyRenamed++;
-                                }
 
-                                catch (Exception ex)
-                                {
-                                    MessageBox.Show(ex.Message);
+                                    fullPath = ReplaceMethod(video, GetFileNameToRename(video), subtitleName);
+
+                                    try
+                                    {
+                                        File.Move(video, fullPath);
+                                        succesfullyRenamed++;
+                                    }
+
+                                    catch (Exception ex)
+                                    {
+                                        MessageBox.Show(ex.Message);
+                                    }
+
                                 }
 
                             }
-
-
+                          
 
                         }
-
+                   
                     }
                     else
                     {
@@ -209,6 +238,7 @@ namespace SubtitleRenamer
         // Metoda izdvajanja file name-a iz full path-a
         public static string GetFileNameToRename(string fileName)
         {
+
             int index = fileName.LastIndexOf("\\");
             int indexOfExtension = fileName.LastIndexOf(".");
 
