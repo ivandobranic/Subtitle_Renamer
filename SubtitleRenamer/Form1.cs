@@ -17,6 +17,7 @@ namespace SubtitleRenamer
     // Program pronalazi video i subtitle extenzije, izdvaja naziv i sprema ih u array-e. U tim array-ima
     // uklanja najcesce separatore i razmak, i sprema u nove arraye. Ukoliko je u naslovu godina filma
     // (sto je i cest slucaj) uklanja sve u nazivu nakon godine i ostavlja sam naslov filma za usporedbu.
+    // U slucaju serije uklanja sve u nazivu nakon oznake sezone i epizode.
     // Ukoliko subtitle file sadrzi nazive iz video array-a, video file se rename-a sa subtitleov-im.
     /// </summary>
     public partial class Form1 : Form
